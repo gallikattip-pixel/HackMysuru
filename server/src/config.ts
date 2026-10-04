@@ -22,6 +22,19 @@ for (const envPath of possibleEnvPaths) {
   }
 }
 
+const resolveResendApiKey = (): string => {
+  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) {
+    return process.env.RESEND_API_KEY.trim();
+  }
+  // Safe backward-compatible fallback to SMTP_PASS: only if SMTP_HOST is resend and SMTP_PASS is a Resend API key
+  const smtpPass = process.env.SMTP_PASS?.trim() || '';
+  const smtpHost = process.env.SMTP_HOST?.trim() || '';
+  if (smtpPass && smtpPass.startsWith('re_') && smtpHost.includes('resend')) {
+    return smtpPass;
+  }
+  return '';
+};
+
 export const CONFIG = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -37,6 +50,7 @@ export const CONFIG = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
   SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'complaint-evidence',
+  RESEND_API_KEY: resolveResendApiKey(),
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465,
   SMTP_USER: process.env.SMTP_USER || '',

@@ -1,4 +1,5 @@
 import { NodemailerOtpProvider } from './nodemailerOtpProvider.js';
+import { ResendHttpOtpProvider } from './resendHttpOtpProvider.js';
 import { OtpService } from './otpService.js';
 import { MemoryOtpStore } from '../db/memoryOtpStore.js';
 import type { OtpProvider, DeliveryMethod } from '../types/otp.js';
@@ -32,16 +33,20 @@ export const otpStore = (() => {
   }
   return memoryStore;
 })();
-export const otpProvider = (() => {
+export const otpProvider: OtpProvider = (() => {
+  if (CONFIG.RESEND_API_KEY) {
+    return new ResendHttpOtpProvider();
+  }
+
   if (CONFIG.SMTP_HOST && CONFIG.SMTP_PASS) {
     return new NodemailerOtpProvider();
   }
   
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL: Missing SMTP configuration in production environment.');
+    throw new Error('CRITICAL: Missing email provider configuration (RESEND_API_KEY or SMTP) in production environment.');
   }
   
-  console.warn('[OtpProvider] Missing SMTP config. Falling back to ConsoleOtpProvider.');
+  console.warn('[OtpProvider] Missing email provider config. Falling back to ConsoleOtpProvider.');
   return new ConsoleOtpProvider();
 })();
 

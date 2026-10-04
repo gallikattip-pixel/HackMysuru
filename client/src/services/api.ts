@@ -1136,18 +1136,26 @@ export async function apiOtpRequest(payload: {
   method: 'EMAIL' | 'SMS';
   purpose: 'REGISTER' | 'LOGIN';
 }): Promise<{ challengeId: string }> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/otp/request`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(10000) : undefined,
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || 'OTP request failed.');
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'OTP request failed.');
+    }
+
+    return data;
+  } catch (err: any) {
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    throw err;
   }
-
-  return data;
 }
 
 export async function apiOtpVerify(payload: {
